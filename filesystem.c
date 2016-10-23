@@ -198,6 +198,24 @@ static int fst_truncate (const char * z, off_t v)
 {
 	return 0;
 }
+//Change the access and modification times of a file with nanosecond resolution
+static int fst_utimens (const char *v, const struct timespec tv[2])
+{
+	return 0;
+}
+//Get extended attributes
+static int fst_getxattr (const char *x, const char *y, char *z, size_t f)
+{
+	return 0;
+}
+static int fst_setxattr (const char *x, const char *y, const char *z, size_t l, int f)
+{
+	return 0;
+}
+static int fst_listxattr (const char *x, char *y, size_t z)
+{
+	return 0;
+}
 
 static struct fuse_operations fuse_example_operations = {
 	.getattr = getattr_callback,
@@ -207,7 +225,11 @@ static struct fuse_operations fuse_example_operations = {
 	.write = fst_write,
 	.mknod = fst_mknod,
 	.truncate = fst_truncate,
-	.unlink = fst_unlink
+	.unlink = fst_unlink,
+	.utimens = fst_utimens,
+	.setxattr	= fst_setxattr,
+	.getxattr	= fst_getxattr,
+	.listxattr = fst_listxattr
 };
 int main(int argc, char *argv[])
 {
