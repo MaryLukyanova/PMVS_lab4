@@ -12,6 +12,7 @@ static int file_count = 0;
 static int *file_offset_end;
 
 #define STORE_FILE "/home/toyer/PMVS_4/PMVS4/all_file"
+#define BUF_FILE "/home/toyer/PMVS_4/PMVS4/buffer_file"
 
 static int path_index(const char* path)
 {
@@ -92,7 +93,21 @@ static int fst_write (const char *path, const char *buf, size_t size, off_t offs
 	FILE *file_buf;
 	int length = 0;
 	int start = index == 0 ? 0 : file_offset_end[index-1];
-
+	if(index != file_count - 1) {
+		file_buf = fopen(BUF_FILE, "rb+");
+		fseek(file_buf, 0, SEEK_SET);
+		fseek(file_in, 0, SEEK_END);
+		length = file_offset_end[file_count-1]-file_offset_end[index];
+		fseek(file_in, file_offset_end[index], SEEK_SET);
+		int buf_tr[4];
+		int j = 0;
+		for(j = 0; j < 4; j++) {
+			buf_tr[j] = 0;
+		}
+		while(fread(buf_tr, sizeof(int), 4, file_in) != 0) {
+			fwrite(buf_tr, sizeof(int), 4, file_buf);
+		}
+	}
 	fseek(file_in, start, SEEK_SET);
 	int buf_len =  strlen(buf);
 	fwrite(buf, buf_len, 1, file_in);	
