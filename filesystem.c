@@ -141,13 +141,56 @@ static int fst_write (const char *path, const char *buf, size_t size, off_t offs
 	fclose(file_in);
 	return buf_len;
 }
+//Create a file node
+static int fst_mknod (const char * path, mode_t mode, dev_t dev)
+{
+	int index = path_index(path);
+	if(index!=-1) {
+		return -ENOENT;
+	}
+	else {
+		file_count++;
+		int i  = 0;
+		int* buf = (int*)malloc(file_count*sizeof(int));
+		char **buf_name = (char**)malloc(file_count*sizeof(char*));
+		for(i = 0; i< file_count; i++) {
+			buf_name[i] = (char*)malloc(NAME_LENGTH*sizeof(char));
+		}
+		for(i  = 0; i< file_count-1; i++) {
+			buf[i] = file_offset_end[i];
+			memset(buf_name[i], 0, NAME_LENGTH);
+			strcpy(buf_name[i], file_name[i]);
+		}
+		if(file_count!=1) {
+			for(i = 0; i < file_count-2; i++) {
+				free(file_name[i]);
+			}
+			free(file_name);
+			free(file_offset_end);
+		}
+		for(i = 0; i < file_count-1; i++) {
+			printf("%s\n", buf_name[i]);
+		}
+		buf[file_count-1] = file_count==1 ? 0 : buf[file_count-2];
+		memset(buf_name[file_count-1], 0, NAME_LENGTH);
+		strcpy(buf_name[file_count-1], path);
+		for(i = 0; i < file_count; i++) {
+			printf("%s\n", buf_name[i]);
+			printf("%d\n", buf[i]);
+		}
+		file_name = buf_name;
+		file_offset_end = buf;
+	}
+	return 0;
+}
 
 static struct fuse_operations fuse_example_operations = {
 	.getattr = getattr_callback,
 	.open = open_callback,
 	.read = read_callback,
 	.readdir = readdir_callback,
-	.write = fst_write
+	.write = fst_write,
+	.mknod = fst_mknod
 };
 int main(int argc, char *argv[])
 {
