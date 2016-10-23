@@ -183,6 +183,21 @@ static int fst_mknod (const char * path, mode_t mode, dev_t dev)
 	}
 	return 0;
 }
+//Remove a file
+static int fst_unlink (const char *path)
+{
+	int index = path_index(path);
+	if(index==-1){
+		return -ENOENT;
+	}
+	memset(file_name[index], 0, NAME_LENGTH);
+	return 0;
+}
+//Change the size of a file
+static int fst_truncate (const char * z, off_t v)
+{
+	return 0;
+}
 
 static struct fuse_operations fuse_example_operations = {
 	.getattr = getattr_callback,
@@ -190,7 +205,9 @@ static struct fuse_operations fuse_example_operations = {
 	.read = read_callback,
 	.readdir = readdir_callback,
 	.write = fst_write,
-	.mknod = fst_mknod
+	.mknod = fst_mknod,
+	.truncate = fst_truncate,
+	.unlink = fst_unlink
 };
 int main(int argc, char *argv[])
 {
