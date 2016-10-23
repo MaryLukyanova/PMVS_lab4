@@ -12,6 +12,7 @@ static int file_count = 0;
 static int *file_offset_end;
 
 #define STORE_FILE "/home/toyer/PMVS_4/PMVS4/all_file"
+#define BUF_FILE "/home/toyer/PMVS_4/PMVS4/buffer_file"
 
 static int path_index(const char* path)
 {
@@ -82,12 +83,71 @@ static int read_callback(const char *path, char *buf, size_t size, off_t offset,
 	fclose(file_in);
 	return size;
 }
+static int fst_write (const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+{
+	int index = path_index(path);
+	if (index == -1) {
+		return -ENOENT;
+	}
+	FILE *file_in = fopen(STORE_FILE, "rb+");
+	FILE *file_buf;
+	int length = 0;
+	int start = index == 0 ? 0 : file_offset_end[index-1];
+	if(index != file_count - 1) {
+		file_buf = fopen(BUF_FILE, "rb+");
+		fseek(file_buf, 0, SEEK_SET);
+		fseek(file_in, 0, SEEK_END);
+		length = file_offset_end[file_count-1]-file_offset_end[index];
+		fseek(file_in, file_offset_end[index], SEEK_SET);
+		int buf_tr[4];
+		int j = 0;
+		for(j = 0; j < 4; j++) {
+			buf_tr[j] = 0;
+		}
+		while(fread(buf_tr, sizeof(int), 4, file_in) != 0) {
+			fwrite(buf_tr, sizeof(int), 4, file_buf);
+		}
+	}
+	fseek(file_in, start, SEEK_SET);
+	int buf_len =  strlen(buf);
+	fwrite(buf, buf_len, 1, file_in);	
+	printf("%d", start);
+	printf("%s\n", buf);
+	printf("%d\n", buf_len);
+	int prev_len = file_offset_end[index]-start;
+	file_offset_end[index] = start + buf_len;
+	if(index != file_count - 1) {
+		printf("+\n");
+		int buf_tr[4];
+		int j = 0;
+		for(j = 0; j<4; j++) {
+			buf_tr[j] = 0;
+		}
+		fseek(file_buf, 0, SEEK_SET);
+		int curr_off = 0;
+		int read = 0;
+		while((read= fread(buf_tr, sizeof(int), 4, file_buf)) != 0) {
+			curr_off+=read;
+			fwrite(buf_tr, sizeof(int), 4, file_in);
+			if(curr_off>=length) {
+				break;
+			}
+		}
+		for(j = index+1; j< file_count; j++) {
+			file_offset_end[j]+=(buf_len-prev_len);
+		}
+		fclose(file_buf);
+	}
+	fclose(file_in);
+	return buf_len;
+}
 
 static struct fuse_operations fuse_example_operations = {
 	.getattr = getattr_callback,
 	.open = open_callback,
 	.read = read_callback,
 	.readdir = readdir_callback,
+	.write = fst_write
 };
 int main(int argc, char *argv[])
 {
